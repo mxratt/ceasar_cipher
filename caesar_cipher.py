@@ -2,12 +2,20 @@ import time
 import random
 import os
 
+# set console size
+size = 'mode 100,8'
+os.system(size)
+
 # default data collection
 output = ""
+cipher = "cipher.log"
 dice = int()
 value = int(1)
 step = 0
+extra = 0
 key = []
+OTP = []
+OTP_request = ""
 alp = [
         "A",  # 0
         "B",  # 1
@@ -61,23 +69,40 @@ alp = [
         "X",  # 23
         "Y",  # 24
         "Z"   # 25
-    ]
+]
 
 # create or overwrite output.txt
-file = open("output.txt", "w")
+file = open(cipher, "w")
 file.writelines("")
 file.close()
 
 # ask for input
-word = input("enter an input to encrypt your message: ").upper()  # convert input to uppercase
+word = input("input: ").upper()  # convert input to uppercase
 length = len(word)  # get length of input in total character sum
+# ask if this encryption will have a One-Time-Pad included, applying a shift key to the original key
+while OTP_request != "y" or "n":
+    OTP_request = input("one time pad(y/n): ").lower()
+    if OTP_request == "y":
+        OTP_request = True
+        break
+    elif OTP_request == "n":
+        OTP_request = False
+        break
+    else:
+        print("\nInvalid Input!\n")
 
 while step != length:  # each loop increases step by 1. once step is equal to the length of the input the loop breaks
     output = word[step]  # splits input into characters, proceeds to the next char each loop
     dice = random.randint(1, 26)  # roll the dice, gives back a pseudo-random number
+    shift = random.randint(1, 73)  # shift that generates the one time key, and applies to the original key
 
+    # if output isn't in the alp list it'll pass as itself, unencoded
+    if output not in alp and extra != length:
+        output = output
+        extra += 1
+        continue
     # check which letter = output, then applies the cipher
-    if output == alp[0]:
+    elif output == alp[0]:
         output = alp[abs(0 + dice)]
     elif output == alp[1]:
         output = alp[abs(1 + dice)]
@@ -129,17 +154,26 @@ while step != length:  # each loop increases step by 1. once step is equal to th
         output = alp[abs(24 + dice)]
     elif output == alp[25]:
         output = alp[abs(25 + dice)]
-    # if output isn't in the alp list it'll pass as itself, unencoded
-    else:
-        output = output
-    key.append(abs(dice))  # add the newest key list to key list (this gets printed after the loop finishes)
-    print(output)
-    print(dice)
-
-    file = open("output.txt", "a")
+    # if user wants an OTP code, this applies the code shift to the original key
+    if OTP_request:
+        dice += shift  # add shift
+    # this prevents characters that aren't letters from being keyed
+    if output in alp:
+        key.append(abs(dice))  # add the newest key list to key list (this gets printed after the loop finishes)
+        if OTP_request:
+            OTP.append(abs(shift))
+    print(output, end="")
+    file = open(cipher, "a")
     file.writelines(output)
     step += 1
-file.writelines("\n" + str(key))
+file.write("\n{}".format(key))
+if OTP_request:
+    file.write("\n{}".format(OTP))
 file.close()
-print("check output.txt")
-time.sleep(10)
+print("\n[", *key, "]")
+if OTP_request:
+    print("[", *OTP, "]")
+else:
+    print("")
+print("check cipher.log")
+time.sleep(300)
